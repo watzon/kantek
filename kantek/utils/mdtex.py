@@ -5,6 +5,15 @@ I called it MDTeX because I'm uncreative and the idea of SubSection and SubSubSe
 from typing import Union
 
 
+def escape_html(text: Union[str, int]) -> str:
+    return str(text)\
+        .replace('&', '&amp;')\
+        .replace('"', '&quot;')\
+        .replace('<', '&lt;')\
+        .replace('>', '&gt;')\
+
+
+
 class FormattedBase:
     """Base class for any message type."""
     text: str
@@ -26,35 +35,35 @@ class Bold(FormattedBase):
     """A bold text."""
 
     def __init__(self, text: Union[str, int]) -> None:
-        self.text = f'**{text}**'
+        self.text = f'<b>{escape_html(text)}</b>'
 
 
 class Italic(FormattedBase):
     """A italic text."""
 
     def __init__(self, text: Union[str, int]) -> None:
-        self.text = f'__{text}__'
+        self.text = f'<em>{escape_html(text)}</em>'
 
 
 class Code(FormattedBase):
     """A Monospaced text."""
 
     def __init__(self, text: Union[str, int]) -> None:
-        self.text = f'`{text}`'
+        self.text = f'<code>{escape_html(text)}</code>'
 
 
 class Pre(FormattedBase):
     """A Multiline Monospaced text."""
 
     def __init__(self, text: Union[str, int]) -> None:
-        self.text = f'```{text}```'
+        self.text = f'<pre>{escape_html(text)}</pre>'
 
 
 class Link(FormattedBase):
     """A Hyperlink with a label."""
 
     def __init__(self, label: String, url: str) -> None:
-        self.text = f'[{label}]({url})'
+        self.text = f'<a href="{url}">{escape_html(label)}</a>'
 
 
 class Mention(Link):

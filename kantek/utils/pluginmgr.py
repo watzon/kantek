@@ -9,11 +9,16 @@ from logging import Logger
 from typing import Callable, Dict, List, Tuple
 
 import logzero
-from telethon import TelegramClient
+from telethon import TelegramClient, events
 
 logger: Logger = logzero.logger
 
 __version__ = '0.1.0'
+
+
+class KantekPlugin:
+    name = None
+    help = None
 
 
 @dataclass
@@ -22,10 +27,12 @@ class Callback:
 
     Attributes:
         name: Callback name
+        help: Callback help
         callback: The callback function
         private: If the callback is private or not
     """
     name: str
+    help: str
     callback: Callable
     private: bool
 
@@ -36,6 +43,7 @@ class Plugin:
 
     Attributes:
         name: Plugin name without path
+        help: Help on how to use the plugin
         callbacks: List of callbacks the plugin has
         full_path: Absolute path to the plugin
         plugin_path: Plugin folder the plugin lies in
@@ -43,6 +51,7 @@ class Plugin:
         version: The plugin version
     """
     name: str
+    help: str
     callbacks: List[Callback]
     full_path: str
     plugin_path: str
@@ -72,7 +81,7 @@ class PluginManager:
 
         """
         for plugin_name, path in self._get_plugin_list():
-            plugin_version = self._get_plugin_version(path)
+            plugin_info = self._get_plugin_info(plugin_name, path)
             active_commands = []
             for callback in self._get_plugin_callbacks(plugin_name, path):
                 logger.debug('Registered plugin %s/%s',
@@ -81,10 +90,11 @@ class PluginManager:
                 self.client.add_event_handler(callback.callback)
             self.active_plugins.append(
                 Plugin(plugin_name,
+                       plugin_info['help'],
                        active_commands,
                        path,
                        self.plugin_path,
-                       plugin_version))
+                       plugin_info['version']))
 
         logger.info('Registered %s plugins.', len(self.active_plugins))
         return self.active_plugins
@@ -141,14 +151,27 @@ class PluginManager:
         with open(path, encoding='utf-8') as f:
             tree = ast.parse(f.read())
             for item in tree.body:
-                if isinstance(item, ast.AsyncFunctionDef) and not item.name.startswith('_'):
-                    is_private = self.__is_private(self.__get_event_decorator_keywords(item))
-                    callbacks.append(Callback(item.name, getattr(module, item.name), is_private))
+                if isinstance(item, ast.ClassDef) and not item.name.startswith('_') and item.bases:
+                    plugin = getattr(module, item.name)
+                    if issubclass(plugin, KantekPlugin):
+                        for method in item.body:
+                            if isinstance(method, ast.AsyncFunctionDef):
+                                func = getattr(plugin, method.name)
+                                if events.is_handler(func):
+                                    is_private = self.__is_private(
+                                        self.__get_event_decorator_keywords(method))
+                                    callbacks.append(
+                                        Callback(method.name, func.__doc__, func, is_private))
         return callbacks
 
     @staticmethod
-    def _get_plugin_version(path: str) -> str:
+    def _get_plugin_info(name: str, path: str) -> Dict:
+        _module: ModuleSpec = importlib.util.spec_from_file_location(name, path)
+        loader: SourceFileLoader = _module.loader
+        module = loader.load_module()
         version = ''
+        name = ''
+        plugin_help = ''
         with open(path, encoding='utf-8') as f:
             tree = ast.parse(f.read())
             for item in tree.body:
@@ -156,7 +179,12 @@ class PluginManager:
                     target = item.targets[0]
                     if target.id == '__version__':
                         version = item.value.s
-        return version
+                elif isinstance(item, ast.ClassDef) and not item.name.startswith('_') and item.bases:
+                    plugin = getattr(module, item.name)
+                    if issubclass(plugin, KantekPlugin):
+                        name = plugin.name
+                        plugin_help = plugin.help
+        return {'version': version, 'name': name, 'help': plugin_help}
 
     @staticmethod
     def __is_private(keywords: Dict[str, bool]) -> bool:
