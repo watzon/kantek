@@ -18,7 +18,6 @@ __version__ = '0.1.0'
 
 class KantekPlugin:
     name = None
-    help = None
 
 
 @dataclass
@@ -183,7 +182,7 @@ class PluginManager:
                     plugin = getattr(module, item.name)
                     if issubclass(plugin, KantekPlugin):
                         name = plugin.name
-                        plugin_help = plugin.help
+                        plugin_help = plugin.__doc__
         return {'version': version, 'name': name, 'help': plugin_help}
 
     @staticmethod

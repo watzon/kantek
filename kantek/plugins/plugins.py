@@ -10,11 +10,12 @@ __version__ = '0.1.0'
 
 
 class Plugins(KantekPlugin):
+    """Manage and get help with plugins plugins"""
     name = 'Plugins'
-    help = 'Get a list of active plugins'
 
     @events.register(NewMessage(outgoing=True, pattern=f'{cmd_prefix}plugins'))
-    async def list(event: NewMessage.Event):
+    async def manage(event: NewMessage.Event):
+        """Manage active plugins"""
         client = event.client
         pluginmgr: PluginManager = client.plugin_mgr
         msg = event.message
@@ -35,11 +36,10 @@ class Plugins(KantekPlugin):
         """Get help on how to use a specific plugin"""
         client = event.client
         pluginmgr: PluginManager = client.plugin_mgr
-        msg = event.message
         keyword_args, args = await get_args(event)
         plugin_name = keyword_args.get('plugin')
         if not plugin_name:
-            await Plugins.list(event)
+            await Plugins.manage(event)
             return
         callback_name = keyword_args.get('callback')
         response = await _plugins_help(event, plugin_name, callback_name, pluginmgr)
