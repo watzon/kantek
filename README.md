@@ -23,8 +23,8 @@ from utils.pluginmgr import KantekPlugin
 
 
 class Ping(KantekPlugin):
+    """A short help message for the entire plugin"""
     name = 'Ping'
-    help = 'A short help message for the entire plugin'
 
     @events.register(NewMessage(outgoing=True, pattern=f'{cmd_prefix}ping'))
     async def ping(event):
