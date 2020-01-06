@@ -2,7 +2,7 @@
 from telethon import events
 from telethon.events import NewMessage
 
-from config import cmd_prefix
+from config import cmd_prefix, plugins_dir
 from utils.helpers import get_args
 from utils.pluginmgr import KantekPlugin, PluginManager
 
@@ -29,6 +29,8 @@ class Plugins(KantekPlugin):
                 response = await _plugins_list(pluginmgr)
             elif cmd in ['unregister', 'ur']:
                 response = await _plugins_unregister(event, pluginmgr)
+            elif cmd in ['register', 're']
+                response = await _plugins_register(event, pluginmgr)
         await client.respond(event, response)
 
     @events.register(NewMessage(outgoing=True, pattern=f'{cmd_prefix}help'))
@@ -110,5 +112,19 @@ async def _plugins_unregister(event: NewMessage.Event,
         return 'No arguments specified.'
     if args[0] == 'all':
         pluginmgr.unregister_all()
+
+async def _plugins_register(event: NewMessage.Event,
+                            pluginmgr: PluginManager) -> str:
+    """Install a new plugin from Telegram.
+    
+    Args:
+        event: The event with the command
+        pluginmgr: The plugin manager instance
+        
+    Returns:
+    
+    """
+    args = get_args(event)
+    activate = args[0]['activate']
 
     return 'Unregistered all non builtins.'
