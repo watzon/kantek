@@ -1,6 +1,6 @@
 logzero==1.5.0
 telethon==1.10.9
 beautifulsoup4==4.7.1
-requests==2.22.0
+requests==2.31.0
 faker==1.0.7
 cryptg==0.2.post0
